@@ -1,16 +1,18 @@
 import { View, Text, ScrollView, TouchableOpacity, Switch, Alert } from "react-native";
+import { useRouter } from "expo-router";
 import { useSettingsStore } from "../../src/stores/settingsStore";
 import { syncPending } from "../../src/services/syncService";
 import { colors, s } from "../../src/tw";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { reminderEnabled, reminderDelay, toggleReminder, setReminderDelay } = useSettingsStore();
 
   const handleExport = async () => {
     try {
       const { getAllMeals } = await import("../../src/services/mealService");
       const meals = await getAllMeals();
-      Alert.alert("导出成功", `共导出 ${meals.length} 条记录\n请通过文件系统或分享功能保存`);
+      Alert.alert("导出成功", "共导出 " + meals.length + " 条记录\n请通过文件系统或分享功能保存");
     } catch (e) {
       Alert.alert("导出失败", String(e));
     }
@@ -60,7 +62,7 @@ export default function ProfilePage() {
             </View>
             {reminderEnabled && (
               <View style={{ marginTop: 8 }}>
-                <Text style={[s.textSm, s.textGray500, { marginBottom: 8 }]}>提醒时间：饭后 {reminderDelay} 小时</Text>
+                <Text style={[s.textSm, s.textGray500, { marginBottom: 8 }]}>提醒时间：饭后 " + reminderDelay + " 小时</Text>
                 <View style={[s.row, { gap: 8 }]}>
                   {[1, 2, 3, 4].map((h) => (
                     <TouchableOpacity key={h} onPress={() => setReminderDelay(h)} style={[{ flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center" }, reminderDelay === h ? { backgroundColor: colors.primary[500] } : { backgroundColor: colors.gray[100] }]}>
@@ -92,8 +94,16 @@ export default function ProfilePage() {
 
         {section("关于", (
           <>
-            <Text style={[s.textSm, s.textGray500]}>EatLog v1.0.0</Text>
-            <Text style={[s.textSm, s.textGray400, s.mt1]}>通过结构化饮食记录与身体反应追踪，辅助管理肠道健康</Text>
+            <TouchableOpacity onPress={() => router.push("/version")} style={{ paddingVertical: 4 }}>
+              <View style={[s.rowCenter, s.between]}>
+                <View>
+                  <Text style={[s.textSm, s.textGray700]}>EatLog v1.0.0</Text>
+                  <Text style={[s.textSm, s.textGray400, { marginTop: 4 }]}>通过结构化饮食记录与身体反应追踪，辅助管理肠道健康</Text>
+                </View>
+                <Text style={{ fontSize: 18, color: colors.gray[400] }}>{String.fromCodePoint(0x276F)}</Text>
+              </View>
+              <Text style={[s.textXs, s.textPrimary500, { marginTop: 8 }]}>查看版本记录</Text>
+            </TouchableOpacity>
           </>
         ))}
 

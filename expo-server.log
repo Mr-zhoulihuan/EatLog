@@ -1,0 +1,7 @@
+﻿Starting project at D:\opensource\EatLog
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8081
+7 packages may need updating. Run npx expo install --check for details.
+Logs for your project will appear below.

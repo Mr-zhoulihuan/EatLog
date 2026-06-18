@@ -1,7 +1,7 @@
 export interface Meal {
   id: string;
   food_name: string;
-  photo_uri?: string;
+  photo_uris?: string[];
   temperature?: Temperature;
   taste?: Taste;
   oiliness?: Oiliness;

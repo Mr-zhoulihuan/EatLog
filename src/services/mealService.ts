@@ -8,7 +8,7 @@ export async function insertMeal(meal: Meal): Promise<void> {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     meal.id,
     meal.food_name,
-    meal.photo_uri ?? null,
+    meal.photo_uris ? JSON.stringify(meal.photo_uris) : null,
     meal.temperature ?? null,
     meal.taste ?? null,
     meal.oiliness ?? null,
@@ -49,7 +49,7 @@ function rowToMeal(row: Record<string, unknown>): Meal {
   return {
     id: row.id as string,
     food_name: row.food_name as string,
-    photo_uri: row.photo_uri as string | undefined,
+    photo_uris: row.photo_uri ? JSON.parse(row.photo_uri as string) as string[] : undefined,
     temperature: row.temperature as Meal["temperature"],
     taste: row.taste as Meal["taste"],
     oiliness: row.oiliness as Meal["oiliness"],

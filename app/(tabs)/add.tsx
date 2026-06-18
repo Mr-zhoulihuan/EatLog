@@ -1,6 +1,7 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Image } from "react-native";
 import { useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { useMeals } from "../../src/hooks/useMeals";
 import { useSymptoms } from "../../src/hooks/useSymptoms";
 import { generateId } from "../../src/types";
@@ -30,6 +31,7 @@ export default function AddPage() {
   const [staple, setStaple] = useState<Staple | "">("");
   const [drink, setDrink] = useState<Drink | "">("");
   const [note, setNote] = useState("");
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
 
   const [symptomType, setSymptomType] = useState<SymptomType | "">("");
   const [severity, setSeverity] = useState(3);
@@ -39,22 +41,56 @@ export default function AddPage() {
     setCookMethods((prev) => prev.includes(method) ? prev.filter((m) => m !== method) : [...prev, method]);
   };
 
+  const pickImages = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("权限不足", "需要相册权限才能选择图片");
+      return;
+    }
+    const remaining = 9 - photoUris.length;
+    if (remaining <= 0) { Alert.alert("已达上限", "最多选择 9 张图片"); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      const uris = result.assets.map((a) => a.uri);
+      setPhotoUris((prev) => [...prev, ...uris].slice(0, 9));
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setPhotoUris((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
     if (mode === "meal") {
       if (!foodName.trim()) { Alert.alert("提示", "请输入食物名称"); return; }
       const now = Date.now();
       await addMeal({
-        id: generateId(), food_name: foodName.trim(), temperature: temperature || undefined, taste: taste || undefined,
-        oiliness: oiliness || undefined, cook_methods: cookMethods.length > 0 ? cookMethods : undefined,
-        staple: (staple as Staple) || undefined, drink: (drink as Drink) || undefined, note: note || undefined,
-        created_at: now, updated_at: now, synced: 0,
+        id: generateId(),
+        food_name: foodName.trim(),
+        photo_uris: photoUris.length > 0 ? photoUris : undefined,
+        temperature: temperature || undefined,
+        taste: taste || undefined,
+        oiliness: oiliness || undefined,
+        cook_methods: cookMethods.length > 0 ? cookMethods : undefined,
+        staple: (staple as Staple) || undefined,
+        drink: (drink as Drink) || undefined,
+        note: note || undefined,
+        created_at: now,
+        updated_at: now,
+        synced: 0,
       });
       Alert.alert("成功", "用餐记录已保存");
       router.back();
     } else {
       if (!symptomType) { Alert.alert("提示", "请选择症状类型"); return; }
       await addSymptom({
-        id: generateId(), start_time: Date.now(), type: symptomType as SymptomType, severity, note: symptomNote || undefined, created_at: Date.now(), synced: 0,
+        id: generateId(), start_time: Date.now(), type: symptomType as SymptomType, severity,
+        note: symptomNote || undefined, created_at: Date.now(), synced: 0,
       });
       Alert.alert("成功", "症状记录已保存");
       router.back();
@@ -93,6 +129,38 @@ export default function AddPage() {
             {section("食物名称", (
               <TextInput style={{ backgroundColor: colors.gray[50], borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colors.gray[900] }} placeholder="请输入食物名称" placeholderTextColor="#9CA3AF" value={foodName} onChangeText={setFoodName} />
             ))}
+
+            {/* Photo Section */}
+            {section("图片（可选，最多9张）", (
+              <>
+                <View style={[s.row, s.wrap, { gap: 8 }]}>
+                  {photoUris.map((uri, i) => (
+                    <View key={i} style={{ position: "relative" }}>
+                      <Image source={{ uri }} style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: colors.gray[200] }} resizeMode="cover" />
+                      <TouchableOpacity
+                        onPress={() => removeImage(i)}
+                        style={{ position: "absolute", top: -4, right: -4, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.red[500], alignItems: "center", justifyContent: "center" }}
+                      >
+                        <Text style={{ color: "#fff", fontSize: 12, fontWeight: "bold" }}>X</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {photoUris.length < 9 && (
+                    <TouchableOpacity
+                      onPress={pickImages}
+                      style={{ width: 80, height: 80, borderRadius: 8, borderWidth: 1, borderColor: colors.gray[200], borderStyle: "dashed", alignItems: "center", justifyContent: "center", backgroundColor: colors.gray[50] }}
+                    >
+                      <Text style={{ fontSize: 24, color: colors.gray[400] }}>+</Text>
+                      <Text style={[s.textXs, s.textGray400, { marginTop: 2 }]}>添加</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {photoUris.length > 0 && (
+                  <Text style={[s.textXs, s.textGray400, { marginTop: 6 }]}>{photoUris.length}/9 张</Text>
+                )}
+              </>
+            ))}
+
             {section("温度", options(
               ["ice", "normal", "warm", "hot"].map((k) => ({ key: k, label: TemperatureLabels[k as Temperature] })), temperature, (k) => setTemperature(k as Temperature)
             ))}
@@ -126,7 +194,7 @@ export default function AddPage() {
             {section("症状类型", options(
               ["diarrhea", "bloating", "colic", "acid_reflux"].map((k) => ({ key: k, label: SymptomTypeLabels[k as SymptomType] })), symptomType, (k) => setSymptomType(k as SymptomType), colors.red[500]
             ))}
-            {section(`严重程度: ${severity}/5`, (
+            {section("严重程度: " + severity + "/5", (
               <View style={[s.row, { gap: 8 }]}>
                 {[1, 2, 3, 4, 5].map((n) => (
                   <TouchableOpacity key={n} onPress={() => setSeverity(n)} style={[{ flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center" }, severity === n ? { backgroundColor: colors.red[500] } : { backgroundColor: colors.gray[100] }]}>

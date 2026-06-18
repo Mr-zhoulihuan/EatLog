@@ -1,13 +1,15 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, Image, TouchableOpacity, ScrollView } from "react-native";
 import type { Meal } from "../types";
-import { formatTime, formatDate } from "../utils/date";
-import { TemperatureLabels, TasteLabels, OilinessLabels, CookMethodLabels, StapleLabels, DrinkLabels } from "../types";
-import { colors, s, chip, chipText, pill } from "../tw";
+import { formatTime } from "../utils/date";
+import { TemperatureLabels, TasteLabels, OilinessLabels, StapleLabels, DrinkLabels } from "../types";
+import { colors, s, pill } from "../tw";
 
 interface Props {
   meal: Meal;
   onPress?: (meal: Meal) => void;
 }
+
+function border(c: string) { return { borderWidth: 1, borderColor: c }; }
 
 export function MealCard({ meal, onPress }: Props) {
   const tags: string[] = [];
@@ -15,18 +17,14 @@ export function MealCard({ meal, onPress }: Props) {
   if (meal.taste) tags.push(TasteLabels[meal.taste]);
   if (meal.oiliness) tags.push(OilinessLabels[meal.oiliness]);
 
+  const photos = meal.photo_uris || [];
+
   return (
     <TouchableOpacity
       onPress={() => onPress?.(meal)}
       style={[s.bgWhite, s.roundedXl, s.p4, { marginBottom: 12 }, s.mx4, s.shadowSm, border(colors.gray[50])]}
     >
       <View style={s.row}>
-        {meal.photo_uri && (
-          <Image
-            source={{ uri: meal.photo_uri }}
-            style={{ width: 64, height: 64, borderRadius: 8, marginRight: 12, backgroundColor: colors.gray[100] }}
-          />
-        )}
         <View style={s.flex1}>
           <View style={[s.rowCenter, s.between]}>
             <Text style={[s.textLg, s.fontSemibold, s.textGray900]}>{meal.food_name}</Text>
@@ -49,8 +47,45 @@ export function MealCard({ meal, onPress }: Props) {
           {meal.drink && (
             <Text style={[s.textSm, s.textGray500, s.mt1]}>饮品: {DrinkLabels[meal.drink]}</Text>
           )}
+
+          {/* Photo Grid */}
+          {photos.length > 0 && (
+            <View style={[s.row, s.wrap, { gap: 4, marginTop: 8 }]}>
+              {photos.map((uri, i) => (
+                <Image
+                  key={i}
+                  source={{ uri }}
+                  style={{ width: i === 0 && photos.length === 1 ? 200 : 80, height: i === 0 && photos.length === 1 ? 150 : 80, borderRadius: 8, backgroundColor: colors.gray[100] }}
+                  resizeMode="cover"
+                />
+              ))}
+              {photos.length > 4 && (
+                <View style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: colors.gray[100], alignItems: "center", justifyContent: "center" }}>
+                  <Text style={[s.textSm, s.fontMedium, s.textGray500]}>+{photos.length - 4}</Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>
   );
 }
+          {/* Photo Grid */}
+          {photos.length > 0 && (
+            <View style={[s.row, s.wrap, { gap: 4, marginTop: 8 }]}>
+              {photos.slice(0, 4).map((uri, i) => (
+                <Image
+                  key={i}
+                  source={{ uri }}
+                  style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: colors.gray[100] }}
+                  resizeMode="cover"
+                />
+              ))}
+              {photos.length > 4 && (
+                <View style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: colors.gray[100], alignItems: "center", justifyContent: "center" }}>
+                  <Text style={[s.textSm, s.fontMedium, s.textGray500]}>+{photos.length - 4}</Text>
+                </View>
+              )}
+            </View>
+          )}
