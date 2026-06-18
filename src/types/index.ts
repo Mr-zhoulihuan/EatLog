@@ -10,6 +10,9 @@ export interface Meal {
   drink?: Drink;
   drink_custom?: string;
   note?: string;
+  mood?: number;
+  calorie_intake?: number;
+  calorie_burn?: number;
   created_at: number;
   updated_at: number;
   synced: number;

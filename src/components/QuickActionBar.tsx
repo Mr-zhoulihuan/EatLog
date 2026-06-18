@@ -1,5 +1,7 @@
 ﻿import { View, Text, TouchableOpacity } from "react-native";
-import { colors, s } from "../tw";
+import { colors, s, getThemeColors } from "../tw";
+import { useSettingsStore } from "../stores/settingsStore";
+import { useT } from "../i18n";
 
 type ActionType = "meal" | "drink" | "snack" | "symptom";
 
@@ -22,18 +24,30 @@ interface Props {
 }
 
 export function QuickActionBar({ onAction }: Props) {
+  const { t } = useT();
+  const themeColor = useSettingsStore((s) => s.themeColor);
+  const themeBg = useSettingsStore((s) => s.themeBackground);
+  const tc = getThemeColors(themeColor);
+  const cardBorder = themeBg == 'dark' ? '#374151' : colors.gray[100];
+  
+  const getLabel = (type: ActionType): string => {
+    const key = "home.quick" + type.charAt(0).toUpperCase() + type.slice(1);
+    return t(key);
+  };
+  
   return (
-    <View style={[s.row, { justifyContent: "space-around", paddingVertical: 16, paddingHorizontal: 16 }, s.bgWhite, { borderTopWidth: 1, borderTopColor: colors.gray[100] }]}>
+    <View style={[s.row, { justifyContent: "space-around", paddingVertical: 20, paddingHorizontal: 24 }, s.bgWhite, { borderTopWidth: 2, borderTopColor: tc[500] + "30" }]}>
       {actions.map((action) => (
         <TouchableOpacity
           key={action.type}
           onPress={() => onAction(action.type)}
+          activeOpacity={0.7}
           style={{ alignItems: "center" }}
         >
-          <View style={{ width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: action.bgColor, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }}>
-            <Text style={{ fontSize: 20 }}>{action.icon}</Text>
+          <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", backgroundColor: action.bgColor, shadowColor: action.bgColor, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4 }}>
+            <Text style={{ fontSize: 22 }}>{action.icon}</Text>
           </View>
-          <Text style={[s.textXs, s.textGray600, { marginTop: 4 }]}>{action.label}</Text>
+          <Text style={[s.textXs, s.textGray600, { marginTop: 6, fontWeight: "600" }]}>{getLabel(action.type)}</Text>
         </TouchableOpacity>
       ))}
     </View>

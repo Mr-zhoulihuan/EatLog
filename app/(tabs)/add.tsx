@@ -2,17 +2,19 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Image } fro
 import { useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { useT } from "../../src/i18n";
 import { useMeals } from "../../src/hooks/useMeals";
 import { useSymptoms } from "../../src/hooks/useSymptoms";
 import { generateId } from "../../src/types";
 import { TemperatureLabels, TasteLabels, OilinessLabels, CookMethodLabels, StapleLabels, DrinkLabels, SymptomTypeLabels } from "../../src/types";
 import type { Temperature, Taste, Oiliness, CookMethod, Staple, Drink, SymptomType, Meal, Symptom } from "../../src/types";
-import { colors, s } from "../../src/tw";
+import { colors, s, getThemeColors } from "../../src/tw";
+import { useSettingsStore } from "../../src/stores/settingsStore";
 
 type Mode = "meal" | "symptom";
 
-const btnActive = (activeColor: string) => ({ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: activeColor, backgroundColor: activeColor });
-const btnInactive = { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: colors.gray[200], backgroundColor: "transparent" };
+const btnActive = (activeColor: string) => ({ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, borderWidth: 1.5, borderColor: activeColor, backgroundColor: activeColor });
+const btnInactive = { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, borderWidth: 1.5, borderColor: colors.gray[200], backgroundColor: "transparent" };
 const btnActiveText = { fontSize: 14, color: "#ffffff" };
 const btnInactiveText = { fontSize: 14, color: colors.gray[600] };
 
@@ -22,6 +24,9 @@ export default function AddPage() {
   const mode: Mode = (params.mode as Mode) || "meal";
   const { addMeal } = useMeals();
   const { addSymptom } = useSymptoms();
+  const { t } = useT();
+  const themeColor = useSettingsStore((s) => s.themeColor);
+  const tc = getThemeColors(themeColor);
 
   const [foodName, setFoodName] = useState("");
   const [temperature, setTemperature] = useState<Temperature | "">("");
@@ -32,10 +37,22 @@ export default function AddPage() {
   const [drink, setDrink] = useState<Drink | "">("");
   const [note, setNote] = useState("");
   const [photoUris, setPhotoUris] = useState<string[]>([]);
+  const [mood, setMood] = useState(3);
+  const [calorieIntake, setCalorieIntake] = useState("");
+  const [calorieBurn, setCalorieBurn] = useState("");
 
   const [symptomType, setSymptomType] = useState<SymptomType | "">("");
   const [severity, setSeverity] = useState(3);
   const [symptomNote, setSymptomNote] = useState("");
+  const sa = {
+    setFoodName, setTemperature, setTaste, setOiliness, setCookMethods,
+    setStaple, setDrink, setNote, setPhotoUris, setSymptomType, setSeverity, setSymptomNote
+  };
+  const clearForm = () => {
+    setFoodName(""); setTemperature("" as any); setTaste("" as any); setOiliness("" as any);
+    setCookMethods([]); setStaple("" as any); setDrink("" as any); setNote(""); setPhotoUris([]); setMood(3); setCalorieIntake(""); setCalorieBurn("");
+    setSymptomType("" as any); setSeverity(3); setSymptomNote("");
+  };
 
   const toggleCookMethod = (method: CookMethod) => {
     setCookMethods((prev) => prev.includes(method) ? prev.filter((m) => m !== method) : [...prev, method]);
@@ -80,24 +97,31 @@ export default function AddPage() {
         staple: (staple as Staple) || undefined,
         drink: (drink as Drink) || undefined,
         note: note || undefined,
+        mood: mood,
+        calorie_intake: calorieIntake ? parseFloat(calorieIntake) : undefined,
+        calorie_burn: calorieBurn ? parseFloat(calorieBurn) : undefined,
         created_at: now,
         updated_at: now,
         synced: 0,
       });
-      Alert.alert("成功", "用餐记录已保存");
-      router.back();
+      Alert.alert(t("add.success"), t("add.mealSaved"), [
+        { text: t("add.clear"), onPress: () => clearForm() },
+        { text: t("common.back"), onPress: () => router.back(), style: "default" },
+      ]);
     } else {
       if (!symptomType) { Alert.alert("提示", "请选择症状类型"); return; }
       await addSymptom({
         id: generateId(), start_time: Date.now(), type: symptomType as SymptomType, severity,
         note: symptomNote || undefined, created_at: Date.now(), synced: 0,
       });
-      Alert.alert("成功", "症状记录已保存");
-      router.back();
+      Alert.alert(t("add.success"), t("add.symptomSaved"), [
+        { text: t("add.clear"), onPress: () => clearForm() },
+        { text: t("common.back"), onPress: () => router.back(), style: "default" },
+      ]);
     }
   };
 
-  const options = (items: { key: string; label: string }[], selected: string, onSelect: (k: string) => void, color = colors.primary[500]) => (
+  const options = (items: { key: string; label: string }[], selected: string, onSelect: (k: string) => void, color = tc[500]) => (
     <View style={[s.row, s.wrap, { gap: 8 }]}>
       {items.map((item) => (
         <TouchableOpacity key={item.key} onPress={() => onSelect(selected === item.key ? "" : item.key)} style={selected === item.key ? btnActive(color) : btnInactive}>
@@ -108,7 +132,7 @@ export default function AddPage() {
   );
 
   const section = (title: string, children: React.ReactNode) => (
-    <View style={[s.bgWhite, s.mx4, { marginTop: 12, borderRadius: 12, padding: 16 }]}>
+    <View style={[{ backgroundColor: "#ffffff", marginHorizontal: 16, marginTop: 12, borderRadius: 18, padding: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 2 }]}>
       <Text style={[s.textSm, s.fontSemibold, s.textGray700, { marginBottom: 8 }]}>{title}</Text>
       {children}
     </View>
@@ -127,7 +151,7 @@ export default function AddPage() {
         {mode === "meal" ? (
           <>
             {section("食物名称", (
-              <TextInput style={{ backgroundColor: colors.gray[50], borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colors.gray[900] }} placeholder="请输入食物名称" placeholderTextColor="#9CA3AF" value={foodName} onChangeText={setFoodName} />
+              <TextInput style={{ backgroundColor: colors.gray[50], borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.gray[900], borderWidth: 1, borderColor: colors.gray[100] }} placeholder="请输入食物名称" placeholderTextColor="#9CA3AF" value={foodName} onChangeText={setFoodName} />
             ))}
 
             {/* Photo Section */}
@@ -173,7 +197,7 @@ export default function AddPage() {
             {section("烹饪方式（可多选）", (
               <View style={[s.row, s.wrap, { gap: 8 }]}>
                 {(["steam", "boil", "stir_fry", "roast", "deep_fry", "pan_fry", "raw", "stew"] as CookMethod[]).map((c) => (
-                  <TouchableOpacity key={c} onPress={() => toggleCookMethod(c)} style={cookMethods.includes(c) ? btnActive(colors.primary[500]) : btnInactive}>
+                  <TouchableOpacity key={c} onPress={() => toggleCookMethod(c)} style={cookMethods.includes(c) ? btnActive(tc[500]) : btnInactive}>
                     <Text style={cookMethods.includes(c) ? btnActiveText : btnInactiveText}>{CookMethodLabels[c]}</Text>
                   </TouchableOpacity>
                 ))}
@@ -185,8 +209,47 @@ export default function AddPage() {
             {section("饮品", options(
               ["milk_tea", "milk", "coffee", "tea", "ice_water", "water"].map((k) => ({ key: k, label: DrinkLabels[k as Drink] })), drink, (k) => setDrink(k as Drink)
             ))}
-            {section("备注", (
-              <TextInput style={{ backgroundColor: colors.gray[50], borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colors.gray[900], minHeight: 60, textAlignVertical: "top" }} placeholder="今天的状态、吃了药等" placeholderTextColor="#9CA3AF" value={note} onChangeText={setNote} multiline />
+            {section(t("add.mood"), (
+              <View style={[s.row, { justifyContent: "center", gap: 10 }]}>
+                {[1,2,3,4,5].map((v) => (
+                  <TouchableOpacity key={v} onPress={() => setMood(v)}
+                    style={[{
+                      width: 54, height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center",
+                      backgroundColor: mood === v ? tc[100] : colors.gray[50],
+                      borderWidth: 3,
+                      borderColor: mood === v ? tc[500] : "transparent",
+                      transform: mood === v ? [{ scale: 1.08 }] : [{ scale: 1 }],
+                    }]}>
+                    <Text style={{ fontSize: 28 }}>{[String.fromCodePoint(0x1F622), String.fromCodePoint(0x1F610), String.fromCodePoint(0x1F60A), String.fromCodePoint(0x1F604), String.fromCodePoint(0x1F929)][v-1]}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ))}
+
+            {section(t("add.calorieIntake"), (
+              <TextInput
+                style={{ backgroundColor: colors.gray[50], borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.gray[900], borderWidth: 1, borderColor: colors.gray[100] }}
+                placeholder={t("add.caloriePlaceholder")}
+                placeholderTextColor="#9CA3AF"
+                value={calorieIntake}
+                onChangeText={setCalorieIntake}
+                keyboardType="numeric"
+              />
+            ))}
+
+            {section(t("add.calorieBurn"), (
+              <TextInput
+                style={{ backgroundColor: colors.gray[50], borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.gray[900], borderWidth: 1, borderColor: colors.gray[100] }}
+                placeholder={t("add.caloriePlaceholder")}
+                placeholderTextColor="#9CA3AF"
+                value={calorieBurn}
+                onChangeText={setCalorieBurn}
+                keyboardType="numeric"
+              />
+            ))}
+
+            {section(t("add.note"), (
+              <TextInput style={{ backgroundColor: colors.gray[50], borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.gray[900], minHeight: 60, textAlignVertical: "top", borderWidth: 1, borderColor: colors.gray[100] }} placeholder="今天的状态、吃了药等" placeholderTextColor="#9CA3AF" value={note} onChangeText={setNote} multiline />
             ))}
           </>
         ) : (
@@ -204,14 +267,14 @@ export default function AddPage() {
               </View>
             ))}
             {section("备注", (
-              <TextInput style={{ backgroundColor: colors.gray[50], borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colors.gray[900], minHeight: 60, textAlignVertical: "top" }} placeholder="补充描述..." placeholderTextColor="#9CA3AF" value={symptomNote} onChangeText={setSymptomNote} multiline />
+              <TextInput style={{ backgroundColor: colors.gray[50], borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.gray[900], minHeight: 60, textAlignVertical: "top", borderWidth: 1, borderColor: colors.gray[100] }} placeholder="补充描述..." placeholderTextColor="#9CA3AF" value={symptomNote} onChangeText={setSymptomNote} multiline />
             ))}
           </>
         )}
 
         <TouchableOpacity
           onPress={handleSubmit}
-          style={[{ marginHorizontal: 16, marginTop: 24, paddingVertical: 14, borderRadius: 12, alignItems: "center" }, mode === "meal" ? { backgroundColor: colors.primary[500] } : { backgroundColor: colors.red[500] }]}
+          style={[{ marginHorizontal: 16, marginTop: 24, paddingVertical: 14, borderRadius: 14, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4, alignItems: "center" }, mode === "meal" ? { backgroundColor: tc[500] } : { backgroundColor: colors.red[500] }]}
         >
           <Text style={[{ color: "#fff", fontSize: 16, fontWeight: "600" }]}>{mode === "meal" ? "保存用餐记录" : "保存症状记录"}</Text>
         </TouchableOpacity>

@@ -24,6 +24,9 @@ async function migrate(database: SQLite.SQLiteDatabase): Promise<void> {
       drink         TEXT,
       drink_custom  TEXT,
       note          TEXT,
+      mood          INTEGER DEFAULT 3,
+      calorie_intake REAL,
+      calorie_burn  REAL,
       created_at    INTEGER NOT NULL,
       updated_at    INTEGER NOT NULL,
       synced        INTEGER DEFAULT 0
@@ -48,6 +51,15 @@ async function migrate(database: SQLite.SQLiteDatabase): Promise<void> {
       color    TEXT
     );
 
+    ALTER TABLE meal ADD COLUMN mood INTEGER DEFAULT 3;
+  `).catch(() => {});
+  await database.execAsync(`
+    ALTER TABLE meal ADD COLUMN calorie_intake REAL;
+  `).catch(() => {});
+  await database.execAsync(`
+    ALTER TABLE meal ADD COLUMN calorie_burn REAL;
+  `).catch(() => {});
+  await database.execAsync(`
     CREATE TABLE IF NOT EXISTS correlation_cache (
       food_name     TEXT NOT NULL,
       symptom_type  TEXT NOT NULL,

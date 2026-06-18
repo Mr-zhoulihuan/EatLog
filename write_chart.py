@@ -1,4 +1,9 @@
-import { View, Text, Dimensions } from "react-native";
+﻿import sys
+
+# Convert PieChart to a professional stacked bar + legend chart
+# Enhance BarChart with professional styling
+
+content = '''import { View, Text, Dimensions } from "react-native";
 import { colors, s, getThemeColors } from "../tw";
 import { useSettingsStore } from "../stores/settingsStore";
 
@@ -229,3 +234,8 @@ export function BarChart({ data, title, maxValue, height = 180 }: BarChartProps)
     </View>
   );
 }
+'''
+
+with open("src/components/Chart.tsx", "w", encoding="utf-8") as f:
+    f.write(content)
+print("Chart.tsx rewritten professionally")

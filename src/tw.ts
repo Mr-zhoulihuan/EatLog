@@ -1,4 +1,6 @@
 import type { TextStyle, ViewStyle } from "react-native";
+import type { ThemeColor, ThemeBackground } from "./stores/settingsStore";
+import { THEME_COLORS } from "./stores/settingsStore";
 
 export const colors = {
   primary: { 50: "#E8F5E9", 100: "#C8E6C9", 200: "#A5D6A7", 300: "#81C784", 400: "#66BB6A", 500: "#4CAF50", 600: "#43A047", 700: "#388E3C", 800: "#2E7D32", 900: "#1B5E20" },
@@ -23,8 +25,12 @@ export const s = {
   wrap: { flexWrap: "wrap" as const },
   gap2: { gap: 8 },
   gap1: { gap: 4 },
+  gap3: { gap: 12 },
+  gap4: { gap: 16 },
   // Padding
   p4: { padding: 16 },
+  p3: { padding: 12 },
+  p5: { padding: 20 },
   px4: { paddingHorizontal: 16 },
   py4: { paddingVertical: 16 },
   py2: { paddingVertical: 8 },
@@ -34,6 +40,8 @@ export const s = {
   mx4: { marginHorizontal: 16 },
   mb2: { marginBottom: 8 },
   mb3: { marginBottom: 12 },
+  mb1: { marginBottom: 4 },
+  mb4: { marginBottom: 16 },
   mt1: { marginTop: 4 },
   mt2: { marginTop: 8 },
   mt3: { marginTop: 12 },
@@ -41,6 +49,8 @@ export const s = {
   // Border radius
   roundedLg: { borderRadius: 12 },
   roundedXl: { borderRadius: 16 },
+  rounded2xl: { borderRadius: 20 },
+  rounded3xl: { borderRadius: 24 },
   roundedFull: { borderRadius: 999 },
   roundedLgT: { borderTopLeftRadius: 12, borderTopRightRadius: 12 },
   // Shadows
@@ -75,6 +85,8 @@ export const s = {
 export function border(c: string) { return { borderWidth: 1, borderColor: c }; }
 export function bg(c: string) { return { backgroundColor: c }; }
 export function textColor(c: string) { return { color: c }; }
+export function shadowMd(color: string) { return { shadowColor: color, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 4 } as ViewStyle; }
+export function shadowLg(color: string) { return { shadowColor: color, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 8 } as ViewStyle; }
 
 export function card() {
   return { ...s.bgWhite, ...s.roundedXl, ...s.p4, ...s.mx4, ...s.shadowSm, borderWidth: 1, borderColor: colors.gray[50] };
@@ -107,3 +119,17 @@ export function pill(cnt: number, i: number) {
     ...(i < cnt - 1 ? { marginRight: 6 } : {}),
   };
 }
+
+export function getThemeColors(themeColor: ThemeColor) {
+  return THEME_COLORS[themeColor];
+}
+
+export function getThemeBg(themeBackground: ThemeBackground, opacity: number) {
+  if (themeBackground === "dark") {
+    const o = Math.round((opacity / 100) * 255).toString(16).padStart(2, "0");
+    return { bg: `#111827${o}`, card: `#1f2937${o}`, text: "#f9fafb", textSecondary: "#d1d5db", border: "#374151" };
+  }
+  return { bg: "#f9fafb", card: "#ffffff", text: "#111827", textSecondary: "#6b7280", border: "#f3f4f6" };
+}
+
+export const DEFAULT_THEME = "green";

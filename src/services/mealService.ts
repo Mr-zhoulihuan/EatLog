@@ -4,8 +4,8 @@ import type { Meal } from "../types";
 export async function insertMeal(meal: Meal): Promise<void> {
   const db = await getDb();
   await db.runAsync(
-    `INSERT INTO meal (id, food_name, photo_uri, temperature, taste, oiliness, cook_methods, staple, drink, drink_custom, note, created_at, updated_at, synced)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO meal (id, food_name, photo_uri, temperature, taste, oiliness, cook_methods, staple, drink, drink_custom, note, mood, calorie_intake, calorie_burn, created_at, updated_at, synced)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     meal.id,
     meal.food_name,
     meal.photo_uris ? JSON.stringify(meal.photo_uris) : null,
@@ -17,6 +17,9 @@ export async function insertMeal(meal: Meal): Promise<void> {
     meal.drink ?? null,
     meal.drink_custom ?? null,
     meal.note ?? null,
+    meal.mood ?? 3,
+    meal.calorie_intake ?? null,
+    meal.calorie_burn ?? null,
     meal.created_at,
     meal.updated_at,
     meal.synced
@@ -39,6 +42,12 @@ export async function getMealsByRange(start: number, end: number): Promise<Meal[
   return rows.map(rowToMeal);
 }
 
+export async function getMealById(id: string): Promise<Meal | null> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<Record<string, unknown>>("SELECT * FROM meal WHERE id = ?", id);
+  return row ? rowToMeal(row) : null;
+}
+
 export async function getLastMeal(): Promise<Meal | null> {
   const db = await getDb();
   const row = await db.getFirstAsync<Record<string, unknown>>("SELECT * FROM meal ORDER BY created_at DESC LIMIT 1");
@@ -58,6 +67,9 @@ function rowToMeal(row: Record<string, unknown>): Meal {
     drink: row.drink as Meal["drink"],
     drink_custom: row.drink_custom as string | undefined,
     note: row.note as string | undefined,
+    mood: row.mood as number | undefined,
+    calorie_intake: row.calorie_intake as number | undefined,
+    calorie_burn: row.calorie_burn as number | undefined,
     created_at: row.created_at as number,
     updated_at: row.updated_at as number,
     synced: row.synced as number,

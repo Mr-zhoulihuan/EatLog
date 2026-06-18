@@ -4,7 +4,9 @@ import { BarChart } from "../../src/components/Chart";
 import { getAllMeals } from "../../src/services/mealService";
 import { calculateCorrelations, getCorrelationResults } from "../../src/services/correlationService";
 import { SymptomTypeLabels } from "../../src/types";
-import { colors, s } from "../../src/tw";
+import { colors, s, getThemeColors } from "../../src/tw";
+import { useSettingsStore } from "../../src/stores/settingsStore";
+import { useT } from "../../src/i18n";
 
 interface DiscomfortItem {
   food_name: string;
@@ -15,6 +17,10 @@ interface DiscomfortItem {
 }
 
 export default function StatsPage() {
+  const { t } = useT();
+  const themeColor = useSettingsStore((s) => s.themeColor);
+  const tc = getThemeColors(themeColor);
+
   const [frequency, setFrequency] = useState<{ label: string; value: number; barColor?: string }[]>([]);
   const [warnings, setWarnings] = useState<DiscomfortItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +30,7 @@ export default function StatsPage() {
     const meals = await getAllMeals();
     const freqMap = new Map<string, number>();
     meals.forEach((m) => freqMap.set(m.food_name, (freqMap.get(m.food_name) || 0) + 1));
-    const sorted = [...freqMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 7).map(([label, value]) => ({ label, value, barColor: "#4CAF50" }));
+    const sorted = [...freqMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 7).map(([label, value]) => ({ label, value, barColor: tc[500] }));
     setFrequency(sorted);
 
     await calculateCorrelations();
@@ -38,7 +44,7 @@ export default function StatsPage() {
   return (
     <View style={[s.flex1, s.bgGray50]}>
       <View style={[s.bgWhite, { paddingTop: 56, paddingBottom: 16 }, s.px4, s.shadowSm]}>
-        <Text style={[s.text2xl, s.fontBold, s.textGray900]}>统计分析</Text>
+        <Text style={[s.text2xl, s.fontBold, s.textGray900]}>{t("stats.title")}</Text>
       </View>
 
       {loading ? (
@@ -48,13 +54,13 @@ export default function StatsPage() {
       ) : (
         <ScrollView style={s.flex1} showsVerticalScrollIndicator={false}>
           <View style={s.mt3}>
-            <BarChart data={frequency.length > 0 ? frequency : [{ label: "暂无数据", value: 0 }]} title="食用频率排名" />
+            <BarChart data={frequency.length > 0 ? frequency : [{ label: t("stats.noData") + "", value: 0 }]} title={t("stats.freqRank")} />
           </View>
 
           <View style={[s.bgWhite, s.mx4, s.roundedXl, s.p4, { marginBottom: 24 }]}>
-            <Text style={[s.textBase, s.fontSemibold, s.textGray800, { marginBottom: 12 }]}>敏感食物预警列表</Text>
+            <Text style={[s.textBase, s.fontSemibold, s.textGray800, { marginBottom: 12 }]}>{t("stats.sensitiveFoods")}</Text>
             {warnings.length === 0 ? (
-              <Text style={[s.textSm, s.textGray400]}>暂无预警数据，继续记录后将自动分析</Text>
+              <Text style={[s.textSm, s.textGray400]}>{t("stats.noWarnings")}</Text>
             ) : (
               warnings.map((w, i) => (
                 <View key={`${w.food_name}-${w.symptom_type}`} style={[s.rowCenter, { paddingVertical: 10 }, i < warnings.length - 1 ? { borderBottomWidth: 1, borderBottomColor: colors.gray[50] } : {}]}>
@@ -64,7 +70,7 @@ export default function StatsPage() {
                   <View style={[s.flex1, { marginLeft: 12 }]}>
                     <Text style={[s.textSm, s.fontMedium, s.textGray900]}>{w.food_name}</Text>
                     <Text style={[s.textXs, s.textGray400]}>
-                      {SymptomTypeLabels[w.symptom_type as keyof typeof SymptomTypeLabels] || w.symptom_type} &middot; {w.count}次不适
+                      {SymptomTypeLabels[w.symptom_type as keyof typeof SymptomTypeLabels] || w.symptom_type} &middot; {w.count} {t("stats.times").replace("{n}", String(w.count))}
                     </Text>
                   </View>
                   <View style={{ backgroundColor: colors.red[50], paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 }}>

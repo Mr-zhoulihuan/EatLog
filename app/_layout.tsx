@@ -28,6 +28,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="version" />
+        <Stack.Screen name="meal-detail" />
       </Stack>
     </QueryClientProvider>
   );
